@@ -1,5 +1,5 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import { ActivityIndicator, Image } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { HelloWave } from "@/components/HelloWave";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
@@ -7,12 +7,19 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useEffect, useState } from "react";
 import { User } from "@/types";
+import { UserCard } from "@/components/ui/UserCard";
 
 export default function HomeScreen() {
   const apiUrl: string = "https://jsonplaceholder.typicode.com/users";
+
   let [users, setUsers] = useState<User[]>([]);
+  let [loading, setLoading] = useState<boolean>(false);
+  let [error, setError] = useState<string | null>(null);
 
   const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const response = await fetch(apiUrl);
 
@@ -23,11 +30,16 @@ export default function HomeScreen() {
       const data = await response.json();
       setUsers(data);
     } catch (error) {
+      setError("Problem pri pridobivanju uporabnikov.");
       console.error("Problem pri pridobivanju uporabnikov:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   return (
     <ParallaxScrollView
@@ -43,11 +55,21 @@ export default function HomeScreen() {
         <ThemedText type="title">Uporabniki</ThemedText>
         <HelloWave />
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="default">
-          Uporabniki so lahko v različnih stanjih, ki jih lahko prepoznamo po
-          njihovem videzu.
-        </ThemedText>
+        {loading && <ActivityIndicator size="large" color="#007AFF" />}
+        {error && (
+          <ThemedText type="default" style={styles.errorText}>
+            {error}
+          </ThemedText>
+        )}
+        {!loading && !error && (
+          <View>
+            {users.map((user) => (
+              <UserCard key={user.id} user={user} />
+            ))}
+          </View>
+        )}
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -69,5 +91,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: "absolute",
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginVertical: 10,
   },
 });
