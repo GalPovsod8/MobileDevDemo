@@ -1,26 +1,33 @@
-import { ActivityIndicator, Image } from "react-native";
-import { StyleSheet, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  View,
+  TouchableOpacity,
+} from "react-native";
 
-import { HelloWave } from "@/components/HelloWave";
+import { Image } from "expo-image";
+
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { useEffect, useState } from "react";
+import { HelloWave } from "@/components/HelloWave";
 import { User } from "@/types";
 import { UserCard } from "@/components/ui/UserCard";
+import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
-  const apiUrl: string = "https://jsonplaceholder.typicode.com/users";
+  const apiUrl = "https://jsonplaceholder.typicode.com/users";
 
-  let [users, setUsers] = useState<User[]>([]);
-  let [loading, setLoading] = useState<boolean>(false);
-  let [error, setError] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
 
   const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
-
     try {
+      setLoading(true);
       const response = await fetch(apiUrl);
 
       if (!response.ok) {
@@ -29,9 +36,9 @@ export default function HomeScreen() {
 
       const data = await response.json();
       setUsers(data);
-    } catch (error) {
+      setError(null);
+    } catch (err) {
       setError("Problem pri pridobivanju uporabnikov.");
-      console.error("Problem pri pridobivanju uporabnikov:", error);
     } finally {
       setLoading(false);
     }
@@ -58,15 +65,17 @@ export default function HomeScreen() {
 
       <ThemedView style={styles.stepContainer}>
         {loading && <ActivityIndicator size="large" color="#007AFF" />}
-        {error && (
-          <ThemedText type="default" style={styles.errorText}>
-            {error}
-          </ThemedText>
-        )}
+        {error && <ThemedText type="default">{error}</ThemedText>}
+
         {!loading && !error && (
           <View>
             {users.map((user) => (
-              <UserCard key={user.id} user={user} />
+              <TouchableOpacity
+                key={user.id}
+                onPress={() => router.push(`/details?id=${user.id}`)}
+              >
+                <UserCard user={user} />
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -91,10 +100,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: "absolute",
-  },
-  errorText: {
-    color: "red",
-    textAlign: "center",
-    marginVertical: 10,
   },
 });
